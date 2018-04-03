@@ -123,9 +123,9 @@ update msg model =
 
     SendMessage ->
       let
-        payload = (JE.object [ ("user", JE.string "user"), ("body", JE.string model.newMessage) ])
+        payload = (JE.object [ ("type", JE.string "message"), ("payload", JE.string model.newMessage) ])
         push_ =
-          Phoenix.Push.init "new:msg" model.channel
+          Phoenix.Push.init "user_action" model.channel
             |> Phoenix.Push.withPayload payload
         (phxSocket, phxCmd) = Phoenix.Socket.push push_ model.phxSocket
       in
