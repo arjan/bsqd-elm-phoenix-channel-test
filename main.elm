@@ -80,16 +80,20 @@ subscriptions model =
 
 -- PHOENIX STUFF
 
+type alias ChatMessageInner =
+  { message : String
+  }
 type alias ChatMessage =
-  { user : String
-  , body : String
+  { payload : ChatMessageInner
   }
 
 chatMessageDecoder : JD.Decoder ChatMessage
 chatMessageDecoder =
-  JD.map2 ChatMessage
-    (JD.field "user" JD.string)
-    (JD.field "body" JD.string)
+  JD.map ChatMessage
+    (JD.field "payload"
+         (JD.map ChatMessageInner
+              (JD.field "message" JD.string)
+         ))
 
 -- UPDATE
 
@@ -100,10 +104,14 @@ userParams =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   case msg of
-    ReceiveMessage str ->
-      ( { model | messages = str :: model.messages }
-      , Cmd.none
-      )
+    ReceiveMessage raw ->
+        case JD.decodeValue chatMessageDecoder raw of
+            Ok chatMessage ->
+                ( { model | messages = chatMessage.payload.message :: model.messages }
+                , Cmd.none
+                )
+            Err error ->
+                ( model, Cmd.none )
 
     PhoenixMsg msg ->
       let
